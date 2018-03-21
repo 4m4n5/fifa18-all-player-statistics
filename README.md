@@ -41,6 +41,7 @@ The dataset contains all the statistics and playing attributes of all the player
 
 The data is scraped from the website [https://sofifa.com][1] by extracting the Player personal data and Player Ids and then the playing and style statistics.
 
+----------
 
 ### Possible Explorations
 
