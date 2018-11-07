@@ -12,7 +12,7 @@ base_url = "https://sofifa.com/players?offset="
 columns = ['ID', 'Name', 'Age', 'Photo', 'Nationality', 'Flag', 'Overall', 'Potential', 'Club', 
            'Club Logo', 'Value', 'Wage', 'Special']
 data = DataFrame(columns=columns)
-for offset in range(303):
+for offset in range(304):
     url = base_url + str(offset*60)
     source_code = requests.get(url)
     plain_text = source_code.text
@@ -37,8 +37,9 @@ for offset in range(303):
         player_data.columns = columns
         data = data.append(player_data, ignore_index=True)
     offset+=1
+data = data.drop_duplicates()
     
- master_data = DataFrame()
+master_data = DataFrame()
 r = 0
 player_data_url = 'https://sofifa.com/player/'
 for index, row in data.iterrows():
@@ -60,8 +61,8 @@ for index, row in data.iterrows():
                 skill_map[str(n)] = value
     if(soup.find('aside').find('div', {'class': 'card mb-2'}).find('div', {'class': 'card-body'})):
         card_rows = soup.find('aside').find('div', {'class': 'card mb-2'}).find('div', {'class': 'card-body'}).findAll('div', {'class': 'columns'})
-        for row in card_rows:
-            attributes = row.findAll('div', {'class': re.compile('column col-sm-2 text-center')})
+        for c_row in card_rows:
+            attributes = c_row.findAll('div', {'class': re.compile('column col-sm-2 text-center')})
             for attribute in attributes:
                 if(attribute.find('div')):
                     text = attribute.text
@@ -86,6 +87,9 @@ for index, row in data.iterrows():
             skill_map[str(name)] = value
     attr_data = DataFrame(columns=skill_names)
     for key in skill_map.keys():
+        if(key == 'Position'):
+            if(skill_map['Position'] in ('RES', 'SUB')):
+                skill_map['Position'] = soup.find('article').find('div', {'class': 'meta'}).find('span').text
         attr_data.loc[r,key] = skill_map[key]
     r = r + 1
     attr_data = attr_data.loc[:, ~attr_data.columns.duplicated()]
@@ -94,4 +98,4 @@ for index, row in data.iterrows():
 full_data = pd.merge(data, master_data, left_index=True, right_index=True)
 full_data.drop('ID_y', axis=1, inplace=True)
 full_data = full_data.rename(index=str, columns={"ID_x": "ID"})
-full_data.to_csv('data.csv', encoding='utf-8')
+full_data.to_csv('data.csv', encoding='utf-8-sig')
