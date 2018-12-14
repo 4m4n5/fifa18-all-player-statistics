@@ -1,11 +1,12 @@
-import numpy as np
-import pandas as pd 
-from pandas import DataFrame
 import re
-import urllib.request
-import requests
-from bs4 import BeautifulSoup
 import warnings
+
+import pandas as pd
+import requests
+import thread_pool
+from bs4 import BeautifulSoup
+from pandas import DataFrame
+
 warnings.filterwarnings('ignore')
 
 base_url = "https://sofifa.com/players?offset="
@@ -14,7 +15,12 @@ columns = ['ID', 'Name', 'Age', 'Photo', 'Nationality', 'Flag', 'Overall', 'Pote
 data = DataFrame(columns=columns)
 for offset in range(304):
     url = base_url + str(offset*60)
-    source_code = requests.get(url)
+    while True:
+        try:
+            source_code = requests.get(url)
+            break
+        except:
+            continue
     plain_text = source_code.text
     soup = BeautifulSoup(plain_text)
     table_body = soup.find('tbody')
@@ -36,17 +42,20 @@ for offset in range(304):
         player_data = DataFrame([[pid, name, age, picture, nationality, flag_img, overall, potential, club, club_logo, value, wage, special]])
         player_data.columns = columns
         data = data.append(player_data, ignore_index=True)
-    offset+=1
 data = data.drop_duplicates()
     
 master_data = DataFrame()
-r = 0
 player_data_url = 'https://sofifa.com/player/'
 for index, row in data.iterrows():
     skill_names = []
-    skill_map = {'ID' : str(row['ID'])}
+    skill_map = {'ID': str(row['ID'])}
     url = player_data_url + str(row['ID'])
-    source_code = requests.get(url)
+    while True:
+        try:
+            source_code = requests.get(url)
+            break
+        except:
+            continue
     plain_text = source_code.text
     soup = BeautifulSoup(plain_text)
     categories = soup.find('div', {'class': 'teams'}).findAll('div', {'class': 'column col-4'})[0:3]
@@ -90,8 +99,7 @@ for index, row in data.iterrows():
         if(key == 'Position'):
             if(skill_map['Position'] in ('RES', 'SUB')):
                 skill_map['Position'] = soup.find('article').find('div', {'class': 'meta'}).find('span').text
-        attr_data.loc[r,key] = skill_map[key]
-    r = r + 1
+        attr_data.loc[index, key] = skill_map[key]
     attr_data = attr_data.loc[:, ~attr_data.columns.duplicated()]
     master_data = master_data.append([attr_data])
  
