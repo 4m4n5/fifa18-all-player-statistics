@@ -71,7 +71,7 @@ for index, row in data.iterrows():
                     skill_names.append(name)
                     skill_map[str(name)] = value
     else:
-        for name in master_data.columns[12:38]:
+        for name in attr_data.columns[12:38]:
             skill_names.append(name)
             skill_map[str(name)] = None
     sections = soup.find('article').findAll('div', {'class': 'mb-2'})[1:3]
